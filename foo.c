@@ -6,26 +6,32 @@
 
 #define nom_list_crl_max 3
 
+
 //status code
 #define st_init       101
 #define find_net1     102
 #define find_net2     103
-
 #define wait_enlign   104
 #define wait_offlign  105
-
 #define make_coffee1  106
 #define make_coffee2  107
 #define make_coffee3  108
-
 #define set_para1     109
 #define set_para2     110
 
 
+
+
+
+
+
+
+
 #define msg_veri      201
 #define msg_para      202
+#define msg_make      203
 
-#define max_nom_loop 10
+#define max_nom_loop 30
 #define macro_wait if (lc_enlign=0)\
 				{\
 					status=wait_enlign;\
@@ -84,9 +90,9 @@ int get_incoming_msg(int childpid,int incoming_msg,int incoming_msg_data)
 	{
 		//child process
 		nbytes = read(pipe_msg[0], &readbuffer, sizeof(int));
-        incoming_msg=readbuffer;
+        if(incoming_msg!=0) return readbuffer;
 		nbytes = read(pipe_msg_data[0], &readbuffer, sizeof(int));
-        incoming_msg_data=readbuffer;
+        if(incoming_msg_data!=0) return readbuffer;
 		
 		printf("incoming msg : %i data: %i\n ",incoming_msg,incoming_msg_data);
 		return 0;
@@ -154,13 +160,14 @@ int main() {
 	int nom_loop =0;
 	if(childpid == 0) for(;nom_loop<max_nom_loop;nom_loop++) 
 	{
-		printf("loop cafe! childpid = %i\n",childpid);
+		printf("loop cafe! childpid = %i status=%i \n",childpid,status);
 		
 		
 		int incoming_msg=0;
 		int incoming_msg_data=0;
-		get_incoming_msg(childpid,incoming_msg,incoming_msg_data);
-		
+		incoming_msg=get_incoming_msg(childpid,1,0);
+		incoming_msg_data=get_incoming_msg(childpid,0,1);
+		printf("switch incoming msg %i data %i",incoming_msg, incoming_msg_data);
 		
 		
 		switch (status) {
@@ -169,7 +176,8 @@ int main() {
 				status=find_net1;
 				break;
 			case find_net1 :
-				if (incoming_msg&&(incoming_msg==msg_veri))
+				
+				if (incoming_msg==msg_veri)
 				{
 					printf("find net !\n");
 					nom_list_crl++;
@@ -182,9 +190,9 @@ int main() {
 				}
 				break;
 			case find_net2 :
-				if (incoming_msg&&(incoming_msg==msg_para))
+				if (incoming_msg==msg_para)
 				{
-					printf("set para !\n");
+					printf("set para temp %i!\n",incoming_msg_data);
 					
 					lc_temp=incoming_msg_data;
 					status =wait_enlign;
@@ -195,13 +203,18 @@ int main() {
 				}
 				break;
 			case wait_enlign :
-				if (incoming_msg&&(incoming_msg==msg_para))
+				if (incoming_msg==msg_para)
 				{
 					status =set_para1;
-				} else 
+				} else if (incoming_msg==msg_make)
 				{
-					status=wait_enlign;
+					printf("================================");
+					status=make_coffee1;
 					wait(50);
+				} else
+				{
+					//do nothing
+					status = wait_enlign;
 				}
 				break;
 			case wait_offlign :
@@ -219,11 +232,11 @@ int main() {
 				break;
 			case make_coffee3 :
 				lc_close();
-				status=make_coffee2;
+				status=wait_enlign;
 				wait(50);
 				break;
 			case set_para1 :
-				if (incoming_msg&&incoming_msg==msg_para)
+				if (incoming_msg==msg_para)
 				{
 					printf("set para !\n");
 					
@@ -243,14 +256,78 @@ int main() {
 	else for(;nom_loop<1;nom_loop++)
 	{
 		printf("loop v1! childpid = %i\n",childpid);
+		//type : msg_veri
+		//data : 15      id of control
 		int incoming_msg=msg_veri;
 		int incoming_msg_data=15;
-		
 		sent_incoming_msg(childpid,incoming_msg,incoming_msg_data);
 		wait(50);
+		
+		
+		
+		//type : msg_veri
+		//data : 15      id of control
+		incoming_msg=msg_veri;
+		incoming_msg_data=15;
+		sent_incoming_msg(childpid,incoming_msg,incoming_msg_data);
+		wait(50);
+		
+		//type : msg_veri
+		//data : 15      id of control
+		incoming_msg=msg_veri;
+		incoming_msg_data=15;
+		sent_incoming_msg(childpid,incoming_msg,incoming_msg_data);
+		wait(50);//type : msg_veri
+		//data : 15      id of control
+		incoming_msg=msg_veri;
+		incoming_msg_data=15;
+		sent_incoming_msg(childpid,incoming_msg,incoming_msg_data);
+		wait(50);//type : msg_veri
+		//data : 15      id of control
+		incoming_msg=msg_veri;
+		incoming_msg_data=15;
+		sent_incoming_msg(childpid,incoming_msg,incoming_msg_data);
+		wait(50);//type : msg_veri
+		//data : 15      id of control
+		incoming_msg=msg_veri;
+		incoming_msg_data=15;
+		sent_incoming_msg(childpid,incoming_msg,incoming_msg_data);
+		wait(50);
+		
+		//type : msg_para
+		//data : 25      lc_temp
 		incoming_msg=msg_para;
+		incoming_msg_data=25;
 		sent_incoming_msg(childpid,incoming_msg,incoming_msg_data);
-		
 		wait(50);
+		//type : msg_para
+		//data : 25      lc_temp
+		incoming_msg=msg_para;
+		incoming_msg_data=25;
+		sent_incoming_msg(childpid,incoming_msg,incoming_msg_data);
+		wait(50);//type : msg_para
+		//data : 25      lc_temp
+		incoming_msg=msg_para;
+		incoming_msg_data=25;
+		sent_incoming_msg(childpid,incoming_msg,incoming_msg_data);
+		wait(50);//type : msg_para
+		//data : 25      lc_temp
+		incoming_msg=msg_para;
+		incoming_msg_data=25;
+		sent_incoming_msg(childpid,incoming_msg,incoming_msg_data);
+		wait(50);//type : msg_para
+		//data : 25      lc_temp
+		incoming_msg=msg_para;
+		incoming_msg_data=25;
+		sent_incoming_msg(childpid,incoming_msg,incoming_msg_data);
+		wait(50);
+		//type : msg_para
+		//data : 25      lc_temp
+		incoming_msg=msg_para;
+		incoming_msg_data=20;
+		sent_incoming_msg(childpid,incoming_msg,incoming_msg_data);
+		wait(50);
+		
+		
 	} //end parent loop
 }//end of main
