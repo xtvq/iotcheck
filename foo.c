@@ -79,13 +79,13 @@ int get_incoming_msg(int childpid,int incoming_msg,int incoming_msg_data)
 {
 	int nbytes;
 	
-	int readbuffer;
+	int readbuffer=0;
 	if (childpid==0)
 	{
 		//child process
-		nbytes = read(pipe_msg[0], readbuffer, sizeof(readbuffer));
+		nbytes = read(pipe_msg[0], &readbuffer, sizeof(int));
         incoming_msg=readbuffer;
-		nbytes = read(pipe_msg_data[0], readbuffer, sizeof(readbuffer));
+		nbytes = read(pipe_msg_data[0], &readbuffer, sizeof(int));
         incoming_msg_data=readbuffer;
 		
 		printf("incoming msg : %i data: %i\n ",incoming_msg,incoming_msg_data);
@@ -105,8 +105,9 @@ int sent_incoming_msg(int childpid,int incoming_msg,int incoming_msg_data)
 		return 0;
 	} else
 	{
-		write(pipe_msg[1], incoming_msg, (strlen(incoming_msg)+1));
-		write(pipe_msg_data[1], incoming_msg_data, (strlen(incoming_msg_data)+1));
+		write(pipe_msg[1], &incoming_msg, sizeof(int));
+		write(pipe_msg_data[1], &incoming_msg_data, sizeof(int));
+		printf("sent msg %i data %i",incoming_msg,incoming_msg_data);
 		return 0;
 	}
 }
@@ -133,8 +134,8 @@ int main() {
 	if(childpid == 0)
 	{
 		/* Child process closes up input side of pipe */
-		close(pipe_msg[0]);
-		close(pipe_msg_data[0]);
+		close(pipe_msg[1]);
+		close(pipe_msg_data[1]);
 	
 		printf("v1 finish booting !\n");
 	
@@ -142,8 +143,8 @@ int main() {
 	else
 	{
 		/* Parent process closes up output side of pipe */
-		close(pipe_msg[1]);
-		close(pipe_msg_data[1]);
+		close(pipe_msg[0]);
+		close(pipe_msg_data[0]);
 	
 		printf("cafe finish booting !\n");
 	
@@ -239,7 +240,7 @@ int main() {
 		wait(50);
 	} //end child loop
 	/*the mother loop*/
-	else for(;nom_loop<max_nom_loop;nom_loop++)
+	else for(;nom_loop<1;nom_loop++)
 	{
 		printf("loop v1! childpid = %i\n",childpid);
 		int incoming_msg=msg_veri;
@@ -249,8 +250,6 @@ int main() {
 		wait(50);
 		incoming_msg=msg_para;
 		sent_incoming_msg(childpid,incoming_msg,incoming_msg_data);
-		
-	
 		
 		wait(50);
 	} //end parent loop
